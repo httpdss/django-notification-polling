@@ -1,0 +1,33 @@
+{% load i18n %}
+<script src="{{ STATIC_URL }}notification_polling/js/jquery.periodicalupdater.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}notification_polling/js/jquery.favicon.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+    var notice_unseen_count = {{notice_unseen_count}};
+    $(function(){
+        $.PeriodicalUpdater('{% url notification_polling_count %}',
+            {method: 'get', type: 'json'},
+            function(remoteData, success, xhr, handle) {
+                if (remoteData.notice_unseen_count == 0 || remoteData.notice_unseen_count == null  ) {
+                    $.favicon('{{ STATIC_URL }}notification_polling/img/favicon_inactive.png');
+                } else {
+                    $.favicon('{{ STATIC_URL }}notification_polling/img/favicon_active.png', function (ctx) {
+                      ctx.font = 'bold 15px "helvetica", sans-serif';
+                      ctx.fillStyle = '#FF0000';
+                      ctx.fillText(remoteData.notice_unseen_count, 10, 27);
+                    });
+                }
+            
+                if (parseInt(remoteData.notice_unseen_count) > 0 && (notice_unseen_count != {{notice_unseen_count}})) {
+                    if (window.webkitNotifications.checkPermission() == 0) {
+                        window.webkitNotifications.createNotification('', 
+                            '{% trans "New notifications" %}',
+                            '{% trans "you have new notifications waiting to be read" %}').show();
+                    } else {
+                        window.webkitNotifications.requestPermission();
+                    }
+                };
+                notice_unseen_count = remoteData.notice_unseen_count;
+            });
+    });
+</script>
